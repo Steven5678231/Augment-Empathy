@@ -17,7 +17,7 @@
 
 ## 5. remote_chat
 远程一对一视频聊天。由于webrtc不允许远程使用http调用摄像头等媒体设备，因此这里也将web服务器改成了https
-演示地址：`https://www.haoailan.online:8081/static/demo/remote_chat.html`.
+演示地址：`https://www.haoailan.online:8081`.
 
 
 # 使用
@@ -29,3 +29,45 @@ go run webserver/main.go
 ```
 
 web服务器就已经启动,默认端口是8081,你可以在`config/web_server.go`文件中进行修改.
+
+# Demo flow
+
+    1.  Client: joinRoom() => socketio.emit('join')
+        Server: socketio.emit('joined') 
+        One peer has joined
+    2.  C: io.on('join')=> getUserMedia => initLocalVideo => createPeerConnection  
+        => onicecandidate() => track remoteStream => socketio.emit('ready)
+        message Handler:
+    3.  ![webrtc_process](webrtc_process.png)
+
+
+# WEBRTC study
+RTCPeerConnection
+---
+
+    Users' flow
+
+    1. Register the onicecandidate handler: sends any ICE candidates to the other peer
+    2. on addstream handler:handle the displaying of video stream
+    3. message handler: 
+        
+        Your signaling server should also have a handler for messages received from the other peer. 
+        If the message contains the RTCSessionDescription object, it should be added to the RTCPeerConnection object using the setRemoteDescription() method.
+        If the message contains the RTCIceCandidate object, it should be added to the RTCPeerConnection object using the addIceCandidate() method.
+        
+    4. Utilize getUserMedia() to set up local media stream and add it to the RTCPeerConnection object using the addStream() method
+    5. Start offer/answer negotiation process
+        Caller: createOffer()=>
+        Callee: createAnswer()
+
+---
+RTCDataChannel
+
+Servers and Protocols
+需要服务器做signaling
+Turn and Stun Server（做穿刺， 在NAT网络中）
+
+Security
+https for signalling
+DTLS for data
+
