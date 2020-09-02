@@ -38,7 +38,7 @@ web服务器就已经启动,默认端口是8081,你可以在`config/web_server.g
     2.  C: io.on('join')=> getUserMedia => initLocalVideo => createPeerConnection  
         => onicecandidate() => track remoteStream => socketio.emit('ready)
         message Handler:
-    3.  ![webrtc_process](webrtc_process.png)
+    3.  ![webrtc_process](https://raw.githubusercontent.com/Steven5678231/webRTCProject/master/webrtc_process.png)
 
 
 # WEBRTC study
