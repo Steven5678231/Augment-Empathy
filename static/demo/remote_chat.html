@@ -1,7 +1,7 @@
 <html>
 
 <head>
-    <title>远程1vs1视频聊天Demo</title>
+    <title>RemoteVideoChatDemo</title>
     <style>
         video {
             top: 0;
@@ -41,12 +41,12 @@
         </div>
     </div>
 
-    <button id="joinBtn">加入房间</button>
-    <button id="leaveBtn" disabled="true">离开房间</button>
-    <button id="downloadBtn" disabled="">下载</button>
+    <button id="joinBtn">joinRoom</button>
+    <button id="leaveBtn" disabled="true">leaveRoom</button>
+    <button id="downloadBtn" disabled="">Download</button>
 
     <script>
-        //各个控件
+        
         Promise.all([
             faceapi.nets.tinyFaceDetector.loadFromUri('/static/models'),
             faceapi.nets.faceLandmark68Net.loadFromUri('/static/models'),
@@ -74,14 +74,14 @@
                 url: 'stun:stun.l.google.com:19302',
             }]
         }
-        var pc = null;  //本地PeerConnection对象
+        var pc = null;  //Local PeerConnection Object
         var localStream = null;
         var remoteStream = null;
         var offerDesc = null;
         var outputEmotion = null;
 
         joinButton.click(function () {
-            room = prompt("请输入房间号：")
+            room = prompt("ROOM number：")
 
             if (room == "") {
                 return;
@@ -100,33 +100,27 @@
             doLeaveRoom();
         });
 
-        //加入房间
+        
         function doJoinRoom(room) {
-            //初始化socketio
+            //init socketio
             var serverHost = "https://" + window.location.host;
             socket = io(serverHost)
             console.log(socket);
-            // if(socket > 0) {
-            //     console.log("Connect server succ:", socket);
-            // } else {
-            //     console.error('Failed to connect signal server', socket);
-            // }
-
             setupSocketIO();
 
             socket.emit("join", room);
         }
 
         function setupSocketIO() {
-            //设置socket消息处理
+            //Socket handler
             socket.on("joined", (roomid, socketid) => {
                 console.log("recieve msg: ", roomid, " ", socketid);
                 roomId = roomid;
 
                 if (socket.id == socketid) {
-                    //发送给自己的消息，自己加入
+                    //if send to self, join
                     
-                    //获取本地stream
+                    //obtain local stream
                     var constraints = {
                         video: {
                             width: 640,
@@ -138,14 +132,14 @@
                             autoGainControl: true
                         }
                     };
-
+                    // Get video stream
                     navigator.mediaDevices.getUserMedia(constraints)
                         .then(getMediaStream)
                         .catch(handleError);
                 } else {
-                    //有新用户加入，与它建立连接
+                    //new User
                     console.log('new user joined room: ', socketid);
-                    //此时对端可能还没有初始化好，因此需要再加一步
+
                     if(targetSocket == null) {
                         targetSocket = socketid;
                     }
@@ -153,7 +147,7 @@
             });
 
             socket.on("ready", (roomid, socketid)=> {
-                //对端准备好了才开始会话
+                //the other is ready
                 if(socketid == targetSocket) {
                     console.log("target reday");
                     startCall();
@@ -161,7 +155,7 @@
             })
 
             socket.on("full", (roomid)=>{
-                alert("房间已满：" + roomid);
+                alert("full：" + roomid);
                 socket.disconnect();
                 socket = null;
             });
@@ -177,7 +171,7 @@
                 } else {
                     remoteVideo.srcObject = null;
                     targetSocket = null;
-                    //重新初始化本地的PeerConnection
+                    //re init local PeerConnection object
                     hangup();
                     initLocal();
                 }
@@ -189,21 +183,25 @@
                     return;
                 }
 
-                //本机发送的数据忽略
+                //ignore message from self
                 if(socketid == socket.id) {
                     return;
                 }
 
                 console.log(pc);
+                // message handler
                 if(msg.hasOwnProperty('type') && msg.type === 'offer') {
                     pc.setRemoteDescription(new RTCSessionDescription(msg));
 
-                    //创建anwser
+                    //if the msg is an offer, then create anwser
                     pc.createAnswer().then(getAnswer).catch(handleAnswerError);
+
                 } else if(msg.hasOwnProperty('type') && msg.type ==='answer') {
                     pc.setRemoteDescription(new RTCSessionDescription(msg));
+
                 } else if(msg.hasOwnProperty('type') && msg.type === 'candidate') {
                     console.log("candidate:", msg);
+                    // receive a new candidate description from remote RTCPeer
                     var candidate = new RTCIceCandidate({
                         sdpMLineIndex: msg.label,
                         candidate: msg.candidate
@@ -215,7 +213,7 @@
             });
         }
 
-        //离开房间
+        //leave room
         function doLeaveRoom() {
             if(socket) {
                 //alert(roomId);
@@ -242,7 +240,7 @@
         }
 
         
-        // 指定图表的配置项和数据
+        // echart and data visualize
         var option = {
             title: {
                 text: 'Emotional Detection'
@@ -317,35 +315,18 @@
         
         
         async function showEmotion(){ 
-            // detections = detectFace(); 
             detections = detectFace();
-            // setTimeout(() => {
-            //     // refreshData()
-            //     detections = detectFace();
-            //     var option = myChart.getOption();
-            //     option.series[0].data = [detections.expressions.angry,
-            //     detections.expressions.disgusted,
-            //     detections.expressions.fearful,
-            //     detections.expressions.happy,
-            //     detections.expressions.neural,
-            //     detections.expressions.sad,
-            //     detections.expressions.suprised,
-            //     ];
-                
-            //     console.log(option.series[0].data);
-            //     myChart.setOption(option);
-            // }, 500)
                
         }   
         
 
         function initLocal() {
-            //创建本地PeerConnection
+            //Create local PeerConnection
             createPeerConnection();
-            //绑定track
+            //track
             bindTracks();
 
-            //通知对端自己准备好
+            //tell the other peer we get ready
             socket.emit("ready", roomId);
         }
 
@@ -359,7 +340,9 @@
 
             if (!pc) {
                 pc = new RTCPeerConnection(pcConfig);
-                
+                // type of EventHandler for event icecandidate
+                // it would get called when a new ICE Candidate is available
+                // triggered when get answer from remote and going to send candidate info to remote
                 pc.onicecandidate = (e) => {
                     if (e.candidate) {
                         (roomId, {
@@ -372,7 +355,8 @@
                         console.log("end candidate");
                     }
                 };
-
+                
+                // Once remote track arrives show it in remote element
                 pc.ontrack = getRemoteStream;
                 setupDataChannel();
             }
@@ -447,13 +431,13 @@
             pc.createOffer(offerOptions).then(getOffer).catch(handleOfferError);
         }
 
-        //创建offer成功
+        //As a caller, creating the offer
         function getOffer(sdp) {
             pc.setLocalDescription(sdp);
 
             offerDesc = sdp;
 
-            //发送给对端
+            //send to other peer
             sendMessage(roomId, offerDesc);
         }
 
@@ -461,6 +445,7 @@
             console.error('create offer failed: ', error);
         }
 
+        // As callee, want to answer the offer
         function getAnswer(sdp) {
             pc.setLocalDescription(sdp);
 

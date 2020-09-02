@@ -31,14 +31,8 @@ go run webserver/main.go
 web服务器就已经启动,默认端口是8081,你可以在`config/web_server.go`文件中进行修改.
 
 # Demo flow
-
-    1.  Client: joinRoom() => socketio.emit('join')
-        Server: socketio.emit('joined') 
-        One peer has joined
-    2.  C: io.on('join')=> getUserMedia => initLocalVideo => createPeerConnection  
-        => onicecandidate() => track remoteStream => socketio.emit('ready)
-        message Handler:
-    3.  ![webrtc_process](https://raw.githubusercontent.com/Steven5678231/webRTCProject/master/webrtc_process.png)
+    1.  ![webrtc_process](webrtc_process.png)
+    2.  When setLocalDescription() set/write local description, RTCPeerConnection would trigger the icecandidate and send the description to remote RTCPeerConnection to update remote candidate.
 
 
 # WEBRTC study
@@ -64,7 +58,7 @@ RTCPeerConnection
 RTCDataChannel
 
 Servers and Protocols
-需要服务器做signaling
+需要服务器做signalling
 Turn and Stun Server（做穿刺， 在NAT网络中）
 
 Security

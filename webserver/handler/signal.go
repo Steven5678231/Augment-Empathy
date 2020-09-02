@@ -42,7 +42,7 @@ func init() {
 
 	server.OnEvent("/", "join", func(so socketio.Conn, room string) {
 		if server.RoomLen(so.Namespace(), room) >= MaxUserCnt {
-			//房间已满
+			//Room is full
 			so.Emit("full", room)
 			return
 		}
@@ -50,11 +50,11 @@ func init() {
 		//加入房间
 		so.Join(room)
 		log.Println(so.ID(), " join ", room, so.Rooms())
-		//全员发送joined消息，客户端自己判断是否是有新用户加入
+		//broadcast to everyone 
 		server.BroadcastToRoom(so.Namespace(), room, "joined", room, so.ID())
 	})
 
-	//处理用户离开消息
+	//When someone leave
 	server.OnEvent("/", "leave", func(so socketio.Conn, room string) {
 		log.Println(so.ID(), " leave ", room, so.Namespace(), so.Rooms())
 		server.BroadcastToRoom(so.Namespace(), room, "leaved", room, so.ID())
@@ -63,12 +63,12 @@ func init() {
 	})
 
 	server.OnEvent("/", "message", func(so socketio.Conn, room string, msg interface{}) {
-		//原封不动地转发
+		//Forward to the other directly
 		server.BroadcastToRoom(so.Namespace(), room, "message", room, so.ID(), msg)
 	})
 
 	server.OnEvent("/", "ready", func(so socketio.Conn, room string) {
-		//原封不动地转发
+		//Forward to the other directly
 		server.BroadcastToRoom(so.Namespace(), room, "ready", room, so.ID())
 	})
 
