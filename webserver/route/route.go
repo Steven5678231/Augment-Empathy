@@ -1,25 +1,28 @@
 package route
 
 import (
+	"WebRTCDemo/webserver/feedback"
 	"WebRTCDemo/webserver/handler"
 
 	"github.com/gin-gonic/gin"
 )
 
-// Router 返回路由器
+// Router
 func Router() *gin.Engine {
-	//初始化
-	gin.SetMode(gin.ReleaseMode) //全局设置环境，此为开发环境，线上环境为gin.ReleaseMode
+	//init
+	emotions := feedback.New()
+	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 
 	// router.Use(handler.TLSHandler())
-	//处理静态资源
 	router.Static("/static/", "./static")
 
-	//处理默认首页
+	//default index
 	router.GET("/", handler.DefaultHomePageHandler)
+	router.GET("/newEmotion", handler.GetEmotion(emotions))
+	router.POST("/newEmotion", handler.AddEmotion(emotions))
 
-	//处理socketio请求
+	//handle socketio request
 	router.GET("/socket.io/", handler.SocketIOServerHandler)
 	router.POST("/socket.io/", handler.SocketIOServerHandler)
 	router.Handle("WS", "/socket.io", handler.SocketIOServerHandler)

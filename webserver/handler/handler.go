@@ -6,10 +6,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-//DefaultHomePageHandler: 处理默认首页
+//DefaultHomePageHandler:
 func DefaultHomePageHandler(c *gin.Context) {
 	c.Redirect(http.StatusFound, "/static/index.html")
 }
+
+
+
 
 // func TLSHandler() gin.HandlerFunc {
 // 	return func(c *gin.Context) {

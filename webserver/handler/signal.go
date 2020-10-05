@@ -2,6 +2,7 @@ package handler
 
 import (
 	"log"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	socketio "github.com/googollee/go-socket.io"
@@ -16,12 +17,26 @@ const (
 	MaxUserCnt = 2
 )
 
+type RoomInfo struct {
+	Pair   map[string]string
+	Roomid uint32
+}
+
+var dict map[string]string
+
 type Msg struct {
 	UserID    string   `json:"userID"`
 	Text      string   `json:"text"`
 	State     string   `json:"state"`
 	Namespace string   `json:"namespace"`
 	Rooms     []string `json:"rooms"`
+}
+
+type EmotionMsg struct {
+	UserID  string    `json:"userID"`
+	RoomID  string    `json:"roomID"`
+	Type    string    `json:"typeOfFeedback"`
+	Emotion []float32 `json:"value"`
 }
 
 func init() {
@@ -47,10 +62,9 @@ func init() {
 			return
 		}
 
-		//加入房间
 		so.Join(room)
 		log.Println(so.ID(), " join ", room, so.Rooms())
-		//broadcast to everyone 
+		//broadcast to everyone
 		server.BroadcastToRoom(so.Namespace(), room, "joined", room, so.ID())
 	})
 
@@ -60,6 +74,24 @@ func init() {
 		server.BroadcastToRoom(so.Namespace(), room, "leaved", room, so.ID())
 
 		so.Leave(room)
+	})
+
+	//When it's time to pop-up form
+	server.OnEvent("/", "startPopup", func(so socketio.Conn, room string) {
+		log.Println(so.ID(), " Have a Questionaire ", room, so.Namespace(), so.Rooms())
+		server.BroadcastToRoom(so.Namespace(), room, "startPopup", room, so.ID())
+
+		// emotion := []float32{0, 0, 0, 1, 0, 0, 0, 0.5}
+		// var username = "hh"
+		// fb_type :="EDA Signal"
+		// newInfo:= EmotionMsg{username, room, fb_type, emotion}
+		// go runDataLoop(newInfo)
+
+	})
+	//When it's time to stop pop-up form
+	server.OnEvent("/", "stopPopup", func(so socketio.Conn, room string) {
+		log.Println(so.ID(), " chat finished ", room, so.Namespace(), so.Rooms())
+		server.BroadcastToRoom(so.Namespace(), room, "stopPopup", room, so.ID())
 	})
 
 	server.OnEvent("/", "message", func(so socketio.Conn, room string, msg interface{}) {
@@ -87,11 +119,24 @@ func init() {
 	go server.Serve()
 }
 
+func runDataLoop(newInfo EmotionMsg) {
+	// extra info
+	for {
+		emotion := []float32{0, 0, 0, 1, 0, 0, 0, 0.5}
+		feedback_type := "EDA Singal"
+		res := EmotionMsg{newInfo.UserID, newInfo.RoomID, feedback_type, emotion}
+		server.BroadcastToRoom("/", newInfo.RoomID, "newFeedback", newInfo.UserID, res)
+		time.Sleep(1 * time.Second)
+	}
+
+}
+
 func SocketIOServerHandler(c *gin.Context) {
 
 	//server.OnEvent("/", "notice")
 	if server != nil {
 		log.Println("WebSocket server start...")
 		server.ServeHTTP(c.Writer, c.Request)
+
 	}
 }

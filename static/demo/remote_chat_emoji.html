@@ -1,0 +1,716 @@
+<html>
+
+<head>
+    <title>RemoteVideoChatDemo</title>
+    <link rel="stylesheet" type="text/css" href="/static/css/main.css">
+    
+
+    <script type="text/javascript" src="../js/jquery.min.js"></script>
+    <script src="/static/js/socket.io.js"></script>
+
+    <script src="../js/face-api.min.js"></script>
+    <script src="../js/FileSaver.js"></script>
+</head>
+
+<body>
+    <h1>Welcome and Enjoy</h1>
+    <div class="container_one">
+        <div>
+        <video id="localVideo" autoplay="autoplay" playsinline="true" controls muted></video>
+        <video id="remoteVideo" playsinline="true" autoplay="autoplay" controls muted style="margin-left: 20px;"></video>
+        <!-- <div id="main" style="width: 600px;height:400px;"></div> -->
+        </div>
+    </div>
+    <div class="feedback_container">
+        <img id="emotionEmoji" src="/./static/assets/neutral.png">
+    </div>
+
+    
+    <div class="button_container">
+        <button id="joinBtn">joinRoom</button>
+        <button id="leaveBtn" disabled="true">leaveRoom</button>
+        <button id="startChat">Start Discuss</button>
+        <button id="stopChat" disabled="true">Stop Discuss</button>
+        <button id="sendBtn" disabled="true">Popup Test</button>
+        <button id="downloadBtn">Download Data</button>
+    </div>
+    <div>
+        <img src="/./static/assets/color-instruction.PNG">
+    </div>
+
+    <div class="bg-model">
+        <div class="model-content">
+        <div class="close">+</div>
+        <form name="questionnaire" id = "questionnaire">
+            <div>
+                <h2>1.What is your feeling?</h2>
+
+                <div class="select-box">
+                    <div class="options-container">
+                        <div class="option">
+                            <input type="radio" class="radio" id="happy" name="question1" value="happy"/>
+                            <label for="happy">happy</label>
+                        </div>
+
+                        <div class="option">
+                            <input type="radio" class="radio" id="sad" name="question1" value="sad"/>
+                            <label for="sad">sad</label>
+                        </div>
+
+                        <div class="option">
+                            <input type="radio" csocslass="radio" id="neutral" name="question1" value="neutral"/>
+                            <label for="neutral">neutral</label>
+                        </div>
+
+                        <div class="option">
+                            <input type="radio" class="radio" id="surprised" name="question1" value="surprised"/>
+                            <label for="surprised">surprised</label>
+                        </div>
+
+                        <div class="option">
+                            <input type="radio" class="radio" id="disguested" name="question1" value="disguested"/>
+                            <label for="disguested">disguested</label>
+                        </div>
+
+                        <div class="option">
+                            <input type="radio" class="radio" id="angry" name="question1" value="angry"/>
+                            <label for="angry">angry</label>
+                        </div>
+
+                        <div class="option">
+                            <input type="radio" class="radio" id="fearful" name="question1" value="fearful"/>
+                            <label for="fearful">fearful</label>
+                        </div>
+
+                    </div>
+
+                    <div class="selected" id="selected1">Select Q1</div>
+
+                    <div class="search-box">
+                        <input type="text" placeholder="Start Typing..." />
+                    </div>
+                </div>
+
+                <h2>2.What is the feeling of the other participant?</h2>
+
+                <div class="select-box" >
+                    <div class="options-container">
+                        <div class="option">
+                            <input type="radio" class="radio" id="happy" name="question2" value="happy" />
+                            <label for="happy">happy</label>
+                        </div>
+
+                        <div class="option">
+                            <input type="radio" class="radio" id="sad" name="question2" value="sad" />
+                            <label for="sad">sad</label>
+                        </div>
+
+                        <div class="option">
+                            <input type="radio" class="radio" id="neutral" name="question2" value="neutral" />
+                            <label for="neutral">neutral</label>
+                        </div>
+
+                        <div class="option">
+                            <input type="radio" class="radio" id="surprised" name="question2" value="surprised" />
+                            <label for="surprised">surprised</label>
+                        </div>
+
+                        <div class="option">
+                            <input type="radio" class="radio" id="disguested" name="question2" value="disguested"/>
+                            <label for="disguested">disguested</label>
+                        </div>
+
+                        <div class="option">
+                            <input type="radio" class="radio" id="angry" name="question2" value="angry"/>
+                            <label for="angry">angry</label>
+                        </div>
+
+                        <div class="option">
+                            <input type="radio" class="radio" id="fearful" name="question2" value="fearful"/>
+                            <label for="fearful">fearful</label>
+                        </div>
+
+                    </div>
+
+                    <div class="selected" id="selected2">Select Q2</div>
+
+                    <div class="search-box">
+                        <input type="text" placeholder="Start Typing..." />
+                    </div>
+                </div>
+            </div>
+
+
+        </form>
+        <button id="submitBtn" class="button" onclick="myFunction()">Submit</button>
+        </div>
+    </div>
+    <script>
+        document.querySelector('.close').addEventListener('click',function(){
+            document.querySelector('.bg-model').style.display = 'none';
+        })
+
+        Promise.all([
+            faceapi.nets.tinyFaceDetector.loadFromUri('/static/models'),
+            faceapi.nets.faceLandmark68Net.loadFromUri('/static/models'),
+            faceapi.nets.faceRecognitionNet.loadFromUri('/static/models'),
+            faceapi.nets.faceExpressionNet.loadFromUri('/static/models')
+        ]).then(console.log("load models")).catch(e=>console.log(e))
+
+        
+        var localVideo = document.getElementById('localVideo');
+        var remoteVideo = document.getElementById('remoteVideo');
+
+        var joinButton = $("#joinBtn");
+        var leaveButton = $("#leaveBtn");
+        var startChat = $('#startChat');
+        var stopChat = $('#stopChat');
+        var downloadBtn = $('#downloadBtn');
+        var submitBtn = $('#submitBtn');
+
+        var room = "";
+        var state = "offline";
+        var socket = null;
+
+        var roomId = -1;
+        var targetSocket = null;
+
+        var pcConfig = {
+            'iceServers': [{
+                url: 'stun:stun.l.google.com:19302',
+            }]
+        }
+        var pc = null;  //Local PeerConnection Object
+        var localStream = null;
+        var remoteStream = null;
+        var offerDesc = null;
+        var outputEmotion = null;
+        var init = -1;
+
+        var emotion_record = [];
+        var questionnaire_record = [];
+        var ChatStart = false;
+        var receivedFeedback = false;
+        var value_of_emotion = null;
+        var idA = null
+        var idB = null
+        var username
+
+        downloadBtn.click(function(){
+            var file = new File(emotion_record, "emotion_records.txt", {type: "text/plain;charset=utf-8"});
+            saveAs(file);
+            var file2 = new File(questionnaire_record,"questionaires.txt", {type: "text/plain;charset=utf-8"});
+            saveAs(file2);
+        })
+
+        function myFunction() {
+            console.log("saving..")
+            mydate = new Date()
+            var datestr = "";
+            datestr += mydate.getHours()+':'
+            datestr += mydate.getMinutes()+':'
+            datestr += mydate.getSeconds()+','
+           
+            ans1 = document.getElementById("selected1").innerText
+            ans2 = document.getElementById("selected2").innerText
+
+            questionnaire_record.push(datestr+ans1+','+ans2+'\n')
+            document.querySelector('.bg-model').style.display = 'none';
+            document.getElementById("selected1").innerHTML = "Select Q1"
+            document.getElementById("selected2").innerHTML = "Select Q2"
+        }
+
+        joinButton.click(function () {
+            room = prompt("Please enter room number：")
+            username = prompt("Please enter user name: ")
+
+            if (room == "") {
+                return;
+            }
+
+            joinButton.attr('disabled', true);
+            leaveButton.attr('disabled', false);
+
+            doJoinRoom(room);
+        });
+
+        leaveButton.click(function () {
+            joinButton.attr('disabled', false);
+            leaveButton.attr('disabled', true);
+
+            doLeaveRoom();
+        });
+
+        startChat.click(function (){
+            if(socket) {
+                //alert(roomId);
+                socket.emit("startPopup", roomId);
+                
+            } else {
+                console.error("socket not init!");
+            }
+        });
+
+        stopChat.click(function(){
+            if(socket) {
+                //alert(roomId);
+                socket.emit("stopPopup", roomId);
+            } else {
+                console.error("socket not init!");
+            }
+        })
+
+        function startPopupQuestion(){
+            startChat.attr('disabled',true);
+            stopChat.attr('disabled',false);
+            timer = setInterval(function(){
+                var Qanswer = ""
+                console.log("you have a questionaire to finish");
+                document.querySelector('.bg-model').style.display = 'flex';
+            },3*60*1000)//every three minutes
+            ChatStart = true;
+        }
+
+        function stopPopupQuestion(){
+            startChat.attr('disabled',false);
+            stopChat.attr('disabled',true);
+            clearInterval(timer)
+            ChatStart = false;
+        }
+
+        
+        function doJoinRoom(room) {
+            //init socketio
+            var serverHost = "https://" + window.location.host;
+            socket = io(serverHost)
+            console.log(socket);
+            socket.username = username
+            console.log(socket.username)
+            
+            
+            setupSocketIO();
+
+            socket.emit("join", room);
+        }
+
+        
+
+        function setupSocketIO() {
+            //socket handler
+            socket.on("joined", (roomid, socketid) => {
+                console.log("recieve msg: ", roomid, " ", socketid);
+                roomId = roomid;
+                
+                if (socket.id == socketid) {
+                   
+                    
+                    //access local stream
+                    var constraints = {
+                        video: {
+                            width: 640,
+                            height: 480
+                        },
+                        audio: {
+                            echoCancellation: true,
+                            noiseSupperssion: true,
+                            autoGainControl: true
+                        }
+                    };
+
+                    navigator.mediaDevices.getUserMedia(constraints)
+                        .then(getMediaStream)
+                        .catch(handleError);
+                } else {
+                    //establish connection with new candidate
+                    console.log('new user joined room: ', socketid);
+                   
+                    if(targetSocket == null) {
+                        targetSocket = socketid;
+                    }
+                }
+            });
+
+            socket.on("ready", (roomid, socketid)=> {
+                // 
+                if(socketid == targetSocket) {
+                    console.log("target reday");
+                    startCall();
+                }
+            })
+
+            socket.on("full", (roomid)=>{
+                alert("Room is full：" + roomid);
+                socket.disconnect();
+                socket = null;
+            });
+
+            socket.on('leaved', (roomid, socketid)=> {
+                console.log("user leave room: " + socketid);
+                if(socketid == socket.id) {
+                    hangup();
+                    socket.disconnect();
+                    socket = null;
+
+                    localVideo.srcObject = null;
+                } else {
+                    remoteVideo.srcObject = null;
+                    targetSocket = null;
+                    //init local PeerConnection
+                    hangup();
+                    initLocal();
+                }
+            });
+
+            socket.on('startPopup', (roomid, socketid)=>{
+                
+                console.log("you have a questionaire to finish");
+                startPopupQuestion();
+                
+            });
+
+            socket.on('stopPopup',(roomid, socketid)=>{
+
+                console.log("chat finished");
+                stopPopupQuestion();
+            })
+
+            // process new type of feedback
+            socket.on('newFeedback', (socketuser, emotionMsg)=>{
+                if (emotionMsg === null || emotionMsg === undefined){
+                    console.error("Receive invalid message");
+                    return;
+                }
+                // if(socketid == socketid.id) {
+                //     return;
+                // }
+                if (socketuser === socket.username){
+                    return;
+                }
+                receivedFeedback = true;
+                console.log(Object.values(emotionMsg))
+                value_of_emotion = Object.values(emotionMsg)[3]
+                console.log(value_of_emotion)
+                
+                
+
+            })
+
+            socket.on('message', (roomid, socketid, msg)=>{
+                if(msg === null || msg === undefined) {
+                    console.error("Receive invalid message");
+                    return;
+                }
+
+                // ignore the message sent from local side
+                if(socketid == socket.id) {
+                    return;
+                }
+
+                console.log(pc);
+                if(msg.hasOwnProperty('type') && msg.type === 'offer') {
+                    pc.setRemoteDescription(new RTCSessionDescription(msg));
+
+                    //create anwser
+                    pc.createAnswer().then(getAnswer).catch(handleAnswerError);
+                } else if(msg.hasOwnProperty('type') && msg.type ==='answer') {
+                    pc.setRemoteDescription(new RTCSessionDescription(msg));
+                } else if(msg.hasOwnProperty('type') && msg.type === 'candidate') {
+                    console.log("candidate:", msg);
+                    var candidate = new RTCIceCandidate({
+                        sdpMLineIndex: msg.label,
+                        candidate: msg.candidate
+                    });
+                    pc.addIceCandidate(candidate);
+                } else {
+                    console.log('Invalid message', msg);
+                }
+            });
+        }
+
+        function doLeaveRoom() {
+            if(socket) {
+                //alert(roomId);
+                socket.emit("leave", roomId);
+            } else {
+                console.error("socket not init!");
+            }
+        }
+
+        function getMediaStream(stream) {
+            if (localStream) {
+                stream.getAudioTracks().forEach((track) => {
+                    localStream.addTrack(track);
+                    stream.removeTrack(track);
+                });
+            } else {
+                localStream = stream;
+            }
+
+            localVideo.srcObject = localStream;
+
+            initLocal();
+            return;
+        }
+
+        var detections = null;
+        var canvas = null;
+        localVideo.addEventListener('play',() =>{
+            showEmotion()  
+        })
+        var currEmotion = "neutral"
+        var maxEmotion = "neutral"
+        var count = 0
+        
+
+        function detectFace() {
+            canvas = faceapi.createCanvasFromMedia(localVideo)
+            document.body.append(canvas)
+            const displaySize = {width: 480, height: 320}
+            faceapi.matchDimensions(canvas, displaySize)   
+            
+            return new Promise(function(resolve){
+                setInterval(async()=>{
+                    var angry = disgusted = fearful = happy = neutral = sad = surprised = 0
+                    if (receivedFeedback){
+                        var weight = value_of_emotion[7]
+                        angry += value_of_emotion[0] * weight
+                        disgusted += value_of_emotion[1] * weight
+                        fearful += value_of_emotion[2] * weight
+                        happy += value_of_emotion[3] * weight
+                        neutral += value_of_emotion[4] * weight
+                        sad += value_of_emotion[5] * weight
+                        surprised += value_of_emotion[6] * weight
+                        receivedFeedback = false
+                    }
+                    detections = await faceapi.detectSingleFace(localVideo,
+                        new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceExpressions()
+                    
+                        if (detections){
+                        
+                            const resizedDetections = faceapi.resizeResults(detections,displaySize)
+                            
+                            
+                            angry += Number(detections.expressions.angry);
+                            disgusted += Number(detections.expressions.disgusted);
+                            fearful += Number(detections.expressions.fearful);
+                            happy += Number(detections.expressions.happy);
+                            neutral += Number(detections.expressions.neutral);
+                            sad += Number(detections.expressions.sad);
+                            surprised += Number(detections.expressions.surprised);
+                        
+                        }
+                    else{
+                        neutral = Number(1);
+                    }
+
+                    const maxNumber = Math.max(angry,
+                        disgusted,
+                        fearful,
+                        happy,
+                        neutral,
+                        sad,
+                        surprised);
+                    if (angry==maxNumber){
+                        document.getElementById('emotionEmoji').src='/./static/assets/angry.png';
+                        // document.body.style.backgroundColor="#E47160";
+                        currEmotion = "angry"
+                        maxEmotion = "angry"
+                        count = 0
+                    
+                    }else if (happy==maxNumber){
+                        
+                        document.getElementById('emotionEmoji').src='/./static/assets/happy.png';
+                        // document.body.style.backgroundColor="#ffea6c";
+                        currEmotion = "happy"
+                        maxEmotion = "happy";
+                        count = 0                                              
+                        
+                    }else if (neutral==maxNumber){
+                        if (maxEmotion=="neutral"){
+                            count = count + 1
+                            if (count>2){
+                                document.getElementById('emotionEmoji').src='/./static/assets/neutral.png';
+                                // document.body.style.backgroundColor="white";
+                                currEmotion = "neutral"
+                            }
+                        }else{
+                            maxEmotion = "neutral"
+                            count = 0
+                        }
+                        
+                    }else if (sad==maxNumber){
+                        
+                        document.getElementById('emotionEmoji').src='/./static/assets/sad.png';
+                        // document.body.style.backgroundColor="#299BC9";
+                        currEmotion = "sad"
+                        
+                        maxEmotion = "sad"
+                        count = 0
+                        
+                        
+                    }else if (surprised==maxNumber){
+                        
+                        document.getElementById('emotionEmoji').src='/./static/assets/suprised.png';
+                        // document.body.style.backgroundColor="black";
+                        currEmotion = "surprised"
+                    
+                        maxEmotion = "surprised"
+                        count = 0
+                       
+                        
+                    }else if (fearful==maxNumber){
+                        
+                        document.getElementById('emotionEmoji').src='/./static/assets/fearful.png';
+                        // document.body.style.backgroundColor="#D060E4";
+                        currEmotion = "fearful"
+                    
+                        maxEmotion = "fearful";
+                        count = 0
+                        
+                    
+                    
+                    }else if (disgusted==maxNumber){
+                        
+                        document.getElementById('emotionEmoji').src='/./static/assets/disgusted.png';
+                        // document.body.style.backgroundColor= "#30AB2F";
+                        currEmotion = "disgusted"
+                        
+                        maxEmotion = "disgusted";
+                        count = 0
+                        
+                        
+                        
+                    }
+
+                    //saving data
+                    if (ChatStart){
+                        mydate = new Date()
+                        var datestr = "";
+                        datestr += mydate.getHours()+':'
+                        datestr += mydate.getMinutes()+':'
+                        datestr += mydate.getSeconds()+','
+                        emotion_record.push(datestr+currEmotion+','+angry.toFixed(3)+','+
+                        disgusted.toFixed(3)+','+fearful.toFixed(3)+','+happy.toFixed(3)+','+
+                        neutral.toFixed(3)+','+sad.toFixed(3)+','+surprised.toFixed(3)+'\n')
+                    }
+                }, 1000)//every 1 second
+            })
+            
+        }
+
+
+        async function showEmotion(){ 
+            detections = detectFace();
+                
+        }   
+
+        function initLocal() {
+            //Create local PeerConnection
+            createPeerConnection();
+            //bind track
+            bindTracks();
+
+            //tell others you are ready to connect
+            socket.emit("ready", roomId);
+        }
+
+        function handleError(err) {
+            console.error('Failed to get media stream: ', err);
+        }
+
+        function createPeerConnection() {
+            console.log("create RTCPeerConnection");
+
+            if (!pc) {
+                pc = new RTCPeerConnection(pcConfig);
+                pc.onicecandidate = (e) => {
+                    if (e.candidate) {
+                        sendMessage(roomId, {
+                            type: 'candidate',
+                            label: event.candidate.sdpMLineIndex,
+                            id: event.candidate.sdpMid,
+                            candidate: event.candidate.candidate
+                        });
+                    } else {
+                        console.log("end candidate");
+                    }
+                };
+
+                pc.ontrack = getRemoteStream;
+            }
+
+        }
+
+        function bindTracks() {
+            console.log("bind tracks into RTCPeerConnection");
+
+            if (pc === null || localStream === null || localStream === undefined) {
+                console.error('pc or localStream is null or undefined');
+                return;
+            }
+
+            localStream.getTracks().forEach((track) => {
+                pc.addTrack(track, localStream);
+            });
+        }
+
+        function getRemoteStream(e) {
+            console.log("getremoteStream")
+            remoteStream = e.streams[0];
+            remoteVideo.srcObject = remoteStream;
+            
+        }
+
+        function hangup() {
+            if(!pc) {
+                return;
+            }
+
+            pc.close();
+            pc = null;
+        }
+
+        function sendMessage(roomid, data) {
+            if (!socket) {
+                console.log('socket is null');
+                return;
+            }
+
+            socket.emit('message', roomid, data);
+        }
+
+        function startCall() {
+            var offerOptions = {
+                offerToRecieveAudio :1,
+                offerToRecieveVideo:1
+            }
+
+            pc.createOffer(offerOptions).then(getOffer).catch(handleOfferError);
+        }
+
+        function getOffer(sdp) {
+            pc.setLocalDescription(sdp);
+
+            offerDesc = sdp;
+
+            sendMessage(roomId, offerDesc);
+        }
+
+        function handleOfferError(error) {
+            console.error('create offer failed: ', error);
+        }
+
+        function getAnswer(sdp) {
+            pc.setLocalDescription(sdp);
+
+            sendMessage(roomId, sdp);
+        }
+
+        function handleAnswerError(error) {
+            console.error('create answer failed: ', error);
+        }
+    </script>
+    <script src="../js/main.js"></script>
+</body>
+
+</html>
