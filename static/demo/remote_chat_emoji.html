@@ -454,7 +454,7 @@
 
         var detections = null;
         var canvas = null;
-        localVideo.addEventListener('play',() =>{
+        remoteVideo.addEventListener('play',() =>{
             showEmotion()  
         })
         var currEmotion = "neutral"
@@ -463,7 +463,7 @@
         
 
         function detectFace() {
-            canvas = faceapi.createCanvasFromMedia(localVideo)
+            canvas = faceapi.createCanvasFromMedia(remoteVideo)
             document.body.append(canvas)
             const displaySize = {width: 480, height: 320}
             faceapi.matchDimensions(canvas, displaySize)   
@@ -481,8 +481,9 @@
                         sad += value_of_emotion[5] * weight
                         surprised += value_of_emotion[6] * weight
                         receivedFeedback = false
+                        console.log(happy)
                     }
-                    detections = await faceapi.detectSingleFace(localVideo,
+                    detections = await faceapi.detectSingleFace(remoteVideo,
                         new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceExpressions()
                     
                         if (detections){
@@ -497,7 +498,7 @@
                             neutral += Number(detections.expressions.neutral);
                             sad += Number(detections.expressions.sad);
                             surprised += Number(detections.expressions.surprised);
-                        
+                            console.log(happy)
                         }
                     else{
                         neutral = Number(1);
@@ -511,19 +512,31 @@
                         sad,
                         surprised);
                     if (angry==maxNumber){
-                        document.getElementById('emotionEmoji').src='/./static/assets/angry.png';
-                        // document.body.style.backgroundColor="#E47160";
-                        currEmotion = "angry"
-                        maxEmotion = "angry"
-                        count = 0
+                        if (maxEmotion=="angry"){
+                            count = count + 1
+                            if (count>0){
+                                document.getElementById('emotionEmoji').src='/./static/assets/angry.png';
+                                // document.body.style.backgroundColor="#E47160";
+                                currEmotion = "angry"
+                            }
+                        }else{
+                            maxEmotion = "angry"
+                            count = 0
+                        }   
+                        
                     
                     }else if (happy==maxNumber){
-                        
-                        document.getElementById('emotionEmoji').src='/./static/assets/happy.png';
-                        // document.body.style.backgroundColor="#ffea6c";
-                        currEmotion = "happy"
-                        maxEmotion = "happy";
-                        count = 0                                              
+                        if (maxEmotion=="happy"){
+                            count = count + 1
+                            if (count>0){
+                                document.getElementById('emotionEmoji').src='/./static/assets/happy.png';
+                                // document.body.style.backgroundColor="#ffea6c";
+                                currEmotion = "happy"
+                            }
+                        }else{
+                            maxEmotion = "happy"
+                            count = 0
+                        }                                         
                         
                     }else if (neutral==maxNumber){
                         if (maxEmotion=="neutral"){
@@ -539,45 +552,58 @@
                         }
                         
                     }else if (sad==maxNumber){
-                        
-                        document.getElementById('emotionEmoji').src='/./static/assets/sad.png';
-                        // document.body.style.backgroundColor="#299BC9";
-                        currEmotion = "sad"
-                        
-                        maxEmotion = "sad"
-                        count = 0
-                        
+                        if (maxEmotion=="sad"){
+                            count = count + 1
+                            if (count>0){
+                                document.getElementById('emotionEmoji').src='/./static/assets/sad.png';
+                                // document.body.style.backgroundColor="#299BC9";
+                                currEmotion = "sad"
+                            }
+                        }else{
+                            maxEmotion = "sad"
+                            count = 0
+                        }
                         
                     }else if (surprised==maxNumber){
-                        
-                        document.getElementById('emotionEmoji').src='/./static/assets/suprised.png';
-                        // document.body.style.backgroundColor="black";
-                        currEmotion = "surprised"
-                    
-                        maxEmotion = "surprised"
-                        count = 0
+                        if (maxEmotion=="surprised"){
+                            count = count + 1
+                            if (count>0){
+                                document.getElementById('emotionEmoji').src='/./static/assets/suprised.png';
+                                // document.body.style.backgroundColor="black";
+                                currEmotion = "surprised"
+                            }
+                        }else{
+                            maxEmotion = "surprised"
+                            count = 0
+                        }
                        
                         
                     }else if (fearful==maxNumber){
-                        
-                        document.getElementById('emotionEmoji').src='/./static/assets/fearful.png';
-                        // document.body.style.backgroundColor="#D060E4";
-                        currEmotion = "fearful"
-                    
-                        maxEmotion = "fearful";
-                        count = 0
-                        
+                        if (maxEmotion=="fearful"){
+                            count = count + 1
+                            if (count>0){
+                                document.getElementById('emotionEmoji').src='/./static/assets/fearful.png';
+                                // document.body.style.backgroundColor="#D060E4";
+                                currEmotion = "fearful"
+                            }
+                        }else{
+                            maxEmotion = "fearful"
+                            count = 0
+                        }
                     
                     
                     }else if (disgusted==maxNumber){
-                        
-                        document.getElementById('emotionEmoji').src='/./static/assets/disgusted.png';
-                        // document.body.style.backgroundColor= "#30AB2F";
-                        currEmotion = "disgusted"
-                        
-                        maxEmotion = "disgusted";
-                        count = 0
-                        
+                        if (maxEmotion=="disgusted"){
+                            count = count + 1
+                            if (count>0){
+                                document.getElementById('emotionEmoji').src='/./static/assets/disgusted.png';
+                                // document.body.style.backgroundColor= "#30AB2F";
+                                currEmotion = "disgusted"
+                            }
+                        }else{
+                            maxEmotion = "disgusted"
+                            count = 0
+                        }
                         
                         
                     }
