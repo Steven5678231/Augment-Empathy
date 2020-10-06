@@ -77,7 +77,7 @@ await fetch('/newEmotion',{
             value: [0.5,0,1,2,0,1,0,1]
         },
         {
-            type: 'EDA',
+            type: 'Heart-Rate',
             value: [0.5,0,1,2,0,1,0,1]
         }]
     })
