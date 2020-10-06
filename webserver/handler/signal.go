@@ -81,12 +81,6 @@ func init() {
 		log.Println(so.ID(), " Have a Questionaire ", room, so.Namespace(), so.Rooms())
 		server.BroadcastToRoom(so.Namespace(), room, "startPopup", room, so.ID())
 
-		// emotion := []float32{0, 0, 0, 1, 0, 0, 0, 0.5}
-		// var username = "hh"
-		// fb_type :="EDA Signal"
-		// newInfo:= EmotionMsg{username, room, fb_type, emotion}
-		// go runDataLoop(newInfo)
-
 	})
 	//When it's time to stop pop-up form
 	server.OnEvent("/", "stopPopup", func(so socketio.Conn, room string) {

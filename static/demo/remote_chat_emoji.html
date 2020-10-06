@@ -34,9 +34,7 @@
         <button id="sendBtn" disabled="true">Popup Test</button>
         <button id="downloadBtn">Download Data</button>
     </div>
-    <div>
-        <img src="/./static/assets/color-instruction.PNG">
-    </div>
+    
 
     <div class="bg-model">
         <div class="model-content">
@@ -285,7 +283,7 @@
             socket = io(serverHost)
             console.log(socket);
             socket.username = username
-            console.log(socket.username)
+            console.log("welcome, ",socket.username)
             
             
             setupSocketIO();
@@ -298,7 +296,7 @@
         function setupSocketIO() {
             //socket handler
             socket.on("joined", (roomid, socketid) => {
-                console.log("recieve msg: ", roomid, " ", socketid);
+                console.log("recieve msg- room id:", roomid,"username", socket.username, " socketid:", socketid);
                 roomId = roomid;
                 
                 if (socket.id == socketid) {
@@ -322,7 +320,7 @@
                         .catch(handleError);
                 } else {
                     //establish connection with new candidate
-                    console.log('new user joined room: ', socketid);
+                    console.log('new user joined room username: ', socket.username,"socket-id: ",socketid);
                    
                     if(targetSocket == null) {
                         targetSocket = socketid;
@@ -388,8 +386,12 @@
                 }
                 receivedFeedback = true;
                 console.log(Object.values(emotionMsg))
-                value_of_emotion = Object.values(emotionMsg)[3]
-                console.log(value_of_emotion)
+                value_of_emotion = Object.values(emotionMsg)
+                // value_of_emotion.forEach(function(item, index){
+                //     console.log(item.value)
+                //     console.log(item.type)
+                // })
+                
                 
                 
 
@@ -472,16 +474,27 @@
                 setInterval(async()=>{
                     var angry = disgusted = fearful = happy = neutral = sad = surprised = 0
                     if (receivedFeedback){
-                        var weight = value_of_emotion[7]
-                        angry += value_of_emotion[0] * weight
-                        disgusted += value_of_emotion[1] * weight
-                        fearful += value_of_emotion[2] * weight
-                        happy += value_of_emotion[3] * weight
-                        neutral += value_of_emotion[4] * weight
-                        sad += value_of_emotion[5] * weight
-                        surprised += value_of_emotion[6] * weight
+                        console.log(value_of_emotion)
+                        value_of_emotion.forEach(function(item, index){
+                            console.log("new coming data:", item.type)
+                            console.log(item.value)                  
+                        })
+                        if (value_of_emotion){
+                            value_of_emotion.forEach(function(item, index){
+                                newType = item.type
+                                newEmotion = item.value
+                                var weight = newEmotion[7]
+                                angry += newEmotion[0] * weight
+                                disgusted += newEmotion[1] * weight
+                                fearful += newEmotion[2] * weight
+                                happy += newEmotion[3] * weight
+                                neutral += newEmotion[4] * weight
+                                sad += newEmotion[5] * weight
+                                surprised += newEmotion[6] * weight
+
+                            })
+                        }
                         receivedFeedback = false
-                        console.log(happy)
                     }
                     detections = await faceapi.detectSingleFace(remoteVideo,
                         new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceExpressions()
@@ -498,7 +511,7 @@
                             neutral += Number(detections.expressions.neutral);
                             sad += Number(detections.expressions.sad);
                             surprised += Number(detections.expressions.surprised);
-                            console.log(happy)
+                            
                         }
                     else{
                         neutral = Number(1);
@@ -511,7 +524,7 @@
                         neutral,
                         sad,
                         surprised);
-                    if (angry==maxNumber){
+                        if (angry==maxNumber){
                         if (maxEmotion=="angry"){
                             count = count + 1
                             if (count>0){
@@ -658,7 +671,7 @@
                             candidate: event.candidate.candidate
                         });
                     } else {
-                        console.log("end candidate");
+                        console.log("trying...");
                     }
                 };
 

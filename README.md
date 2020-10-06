@@ -47,15 +47,21 @@ Namespaces : '/newEmotion'
 Request body:
 ```json
 {
-    userID: 'string',
-    roomID: 'string',
-    type: 'string',
-    value: '[8]float32'
+    "userID": "string",
+    "roomID": "string",
+    "emotions": "[]emotion_detail",
+}
+```
+```go
+emotion_detail:
+{
+    "type": "string"
+    "value": []float32
 }
 ```
 **Futher Explain:**
 
-'value' in the request body have 8 float32 value, the first 7 values indicating the probability of emotion(angry,disgusted,fearful,happy,neutral,sad,surprised), and the 8th(last) value indicating the weight of this type of feedback to be calculated with the existing types.
+'value' in the emotion_detail have 8 float32 value, the first 7 values indicating the probability of emotion(angry,disgusted,fearful,happy,neutral,sad,surprised), and the 8th(last) value indicating the weight of this type of feedback to be calculated with the existing types.
 
 Example:
 ``` javascript
@@ -64,9 +70,16 @@ await fetch('/newEmotion',{
     headers:{'content-type': 'application/json'},
     body:JSON.stringify({
         userID: 'hh',
-        roomID: '1', 
-        type: 'EDA',
-        value: [0.5,0,1,2,0,1,0,1]
+        roomID: '1',
+        emotion_detail: [
+        {
+            type: 'EDA',
+            value: [0.5,0,1,2,0,1,0,1]
+        },
+        {
+            type: 'EDA',
+            value: [0.5,0,1,2,0,1,0,1]
+        }]
     })
 })
 ```

@@ -1,10 +1,15 @@
 package feedback
 
+type EmotionDetail struct {
+	Type 	string 		`json:"type"`
+	Emotion []float32	`json:"value"`
+}
+
 type EmotionMsg struct {
 	UserID  string      `json:"userID"`
 	RoomID  string      `json:"roomID"`
-	Type 	string 		`json:"type"`
-	Emotion []float32	`json:"value"`
+	Emotions []EmotionDetail `json:"emotion_detail"`
+	
 }
 
 type EmotionsRepo struct {
