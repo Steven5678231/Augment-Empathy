@@ -64,6 +64,8 @@ emotion_detail:
 'value' in the emotion_detail have 8 float32 value, the first 7 values indicating the probability of emotion(angry,disgusted,fearful,happy,neutral,sad,surprised), and the 8th(last) value indicating the weight of this type of feedback to be calculated with the existing types.
 
 Example:
+
+Javascript in console
 ``` javascript
 await fetch('/newEmotion',{ 
     method: 'POST',
@@ -82,6 +84,23 @@ await fetch('/newEmotion',{
         }]
     })
 })
+```
+POSTMAN
+```JSON
+{
+    "userID": "hh1",
+    "roomID": "1",
+    "emotion_detail": [
+    {
+        "type": "EDA",
+        "value": [0.5,0,1,2,0,1,0,1]
+    },
+    {
+        "type": "Heart-Rate",
+        "value": [0.5,0,1,2,0,1,0,1]
+    }]
+    
+}
 ```
 
 # Plus: WEBRTC connection flow
